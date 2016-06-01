@@ -51,7 +51,7 @@ static struct ConfigDef ConnVars[] = {
   },
 #ifdef USE_SSL
 #ifdef USE_SSL_GNUTLS
-  { "ssl_ca_certificates_file", DT_PATH|DT_PATH_FILE, 0, 0, NULL,
+  { "ssl_ca_certificates_file", DT_PATH|DT_PATH_FILE, IP "/etc/ssl/certs/ca-bundle.crt", 0, NULL,
     "File containing trusted CA certificates"
   },
 #endif
