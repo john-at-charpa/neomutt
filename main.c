@@ -153,6 +153,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include "mutt/lib.h"
 #include "address/lib.h"
@@ -462,6 +463,58 @@ static void log_translation(void)
   mutt_debug(LL_DEBUG1, "Translation: %.*s\n", len, lang);
 }
 
+
+void test_addr(void)
+{
+  const char *emails[] = {
+    "Arnold Schwarzenegger <as@elderberry.com>",
+    "Barbra Streisand <bs@ugli.com>",
+    "Charlton Heston <ch@raspberry.com>",
+    "dave",
+    "Elton John <ej@kumquat.com>",
+    "Hildur Gudnadottir <hg@jackfruit.com>",
+    "Jeremy Irons <ji@papaya.com>",
+    "jim",
+    "Laurence Olivier <lo@banana.com>",
+    "mike",
+    "Robert De Niro <rdn@jackfruit.com>",
+    "Roberto Benigni <rb@apple.com>",
+    "Ronald Colman <rc@xigua.com>",
+    NULL,
+  };
+
+  struct AddressList to = TAILQ_HEAD_INITIALIZER(to);
+  struct AddressList cc = TAILQ_HEAD_INITIALIZER(cc);
+  struct AddressList all = TAILQ_HEAD_INITIALIZER(all);
+
+  srand(getpid());
+  for (int i = 0; i < 1000; i++)
+  {
+    int r = rand() % 13;
+    struct Address *addr_to = address_new(emails[r]);
+    r = rand() % 13;
+    struct Address *addr_cc = address_new(emails[r]);
+
+    mutt_addrlist_append(&to, addr_to);
+    mutt_addrlist_append(&cc, addr_cc);
+  }
+
+  mutt_addrlist_copy(&all, &to, false);
+  mutt_addrlist_copy(&all, &cc, false);
+  mutt_addrlist_qualify(&all, "flatcap.org");
+  mutt_addrlist_dedupe(&all);
+
+  struct Address *a = NULL;
+  TAILQ_FOREACH(a, &all, entries)
+  {
+    printf("%s\n", a->mailbox);
+  }
+
+  mutt_addrlist_clear(&to);
+  mutt_addrlist_clear(&cc);
+  mutt_addrlist_clear(&all);
+}
+
 /**
  * main - Start NeoMutt
  * @param argc Number of command line arguments
@@ -496,7 +549,7 @@ int main(int argc, char *argv[], char *envp[])
   bool dump_variables = false;
   bool one_liner = false;
   bool hide_sensitive = false;
-  bool batch_mode = false;
+  bool batch_mode = true;
   bool edit_infile = false;
 #ifdef USE_DEBUG_PARSE_TEST
   bool test_config = false;
@@ -935,6 +988,7 @@ int main(int argc, char *argv[], char *envp[])
 
   if (batch_mode)
   {
+    test_addr();
     goto main_ok; // TEST22: neomutt -B
   }
 
