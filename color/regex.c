@@ -161,12 +161,12 @@ void regex_color_list_clear(struct RegexColorList *rcl)
 
 /**
  * regex_colors_get_list - Return the RegexColorList for a colour id
- * @param color Colour ID
+ * @param cid Colour Id, e.g. #MT_COLOR_BODY
  * @retval ptr RegexColorList
  */
-struct RegexColorList *regex_colors_get_list(enum ColorId color)
+struct RegexColorList *regex_colors_get_list(enum ColorId cid)
 {
-  switch (color)
+  switch (cid)
   {
     case MT_COLOR_ATTACH_HEADERS:
       return &AttachList;
@@ -291,7 +291,7 @@ static enum CommandResult add_pattern(struct RegexColorList *rcl, const char *s,
 
 /**
  * regex_colors_parse_color_list - Parse a Regex 'color' command
- * @param color   Colour ID, should be #MT_COLOR_QUOTED
+ * @param cid     Colour Id, should be #MT_COLOR_QUOTED
  * @param pat     Regex pattern
  * @param fg      Foreground colour
  * @param bg      Background colour
@@ -302,11 +302,11 @@ static enum CommandResult add_pattern(struct RegexColorList *rcl, const char *s,
  *
  * Parse a Regex 'color' command, e.g. "color index green default pattern"
  */
-bool regex_colors_parse_color_list(enum ColorId color, const char *pat, uint32_t fg,
+bool regex_colors_parse_color_list(enum ColorId cid, const char *pat, uint32_t fg,
                                    uint32_t bg, int attrs, int *rc, struct Buffer *err)
 
 {
-  switch (color)
+  switch (cid)
   {
     case MT_COLOR_ATTACH_HEADERS:
       *rc = add_pattern(&AttachList, pat, true, fg, bg, attrs, err, false, 0);
@@ -342,7 +342,7 @@ bool regex_colors_parse_color_list(enum ColorId color, const char *pat, uint32_t
 
 /**
  * regex_colors_parse_status_list - Parse a Regex 'color status' command
- * @param color   Colour ID, should be #MT_COLOR_QUOTED
+ * @param cid     Colour ID, should be #MT_COLOR_QUOTED
  * @param pat     Regex pattern
  * @param fg      Foreground colour
  * @param bg      Background colour
@@ -351,21 +351,21 @@ bool regex_colors_parse_color_list(enum ColorId color, const char *pat, uint32_t
  * @param err     Buffer for error messages
  * @retval true Colour was parsed
  */
-int regex_colors_parse_status_list(enum ColorId color, const char *pat, uint32_t fg,
+int regex_colors_parse_status_list(enum ColorId cid, const char *pat, uint32_t fg,
                                    uint32_t bg, int attrs, int match, struct Buffer *err)
 {
-  if (color != MT_COLOR_STATUS)
+  if (cid != MT_COLOR_STATUS)
     return -1;
 
   int rc = add_pattern(&StatusList, pat, true, fg, bg, attrs, err, false, match);
   if (rc == MUTT_CMD_SUCCESS)
   {
     struct Buffer *buf = mutt_buffer_pool_get();
-    get_colorid_name(color, buf);
+    get_colorid_name(cid, buf);
     color_debug("NT_COLOR_SET: %s\n", buf->data);
     mutt_buffer_pool_release(&buf);
 
-    struct EventColor ev_c = { color, NULL }; //QWQ
+    struct EventColor ev_c = { cid, NULL }; //QWQ
     notify_send(ColorsNotify, NT_COLOR, NT_COLOR_SET, &ev_c);
   }
 
@@ -375,14 +375,14 @@ int regex_colors_parse_status_list(enum ColorId color, const char *pat, uint32_t
 
 /**
  * regex_colors_parse_uncolor - Parse a Regex 'uncolor' command
- * @param color   Colour id, e.g. #MT_COLOR_STATUS
+ * @param cid     Colour Id, e.g. #MT_COLOR_STATUS
  * @param pat     Pattern to remove (NULL to remove all)
  * @param uncolor true if 'uncolor', false if 'unmono'
  * @retval true If colours were unset
  */
-bool regex_colors_parse_uncolor(enum ColorId color, const char *pat, bool uncolor)
+bool regex_colors_parse_uncolor(enum ColorId cid, const char *pat, bool uncolor)
 {
-  struct RegexColorList *cl = regex_colors_get_list(color);
+  struct RegexColorList *cl = regex_colors_get_list(cid);
   if (!cl)
     return false;
 
@@ -391,7 +391,7 @@ bool regex_colors_parse_uncolor(enum ColorId color, const char *pat, bool uncolo
     bool rc = STAILQ_FIRST(cl);
 
     mutt_debug(LL_NOTIFY, "NT_COLOR_RESET: [ALL]\n");
-    struct EventColor ev_c = { color, NULL };
+    struct EventColor ev_c = { cid, NULL };
     notify_send(ColorsNotify, NT_COLOR, NT_COLOR_RESET, &ev_c);
 
     regex_color_list_clear(cl);
@@ -414,7 +414,7 @@ bool regex_colors_parse_uncolor(enum ColorId color, const char *pat, bool uncolo
         STAILQ_REMOVE_HEAD(cl, entries);
 
       mutt_debug(LL_NOTIFY, "NT_COLOR_RESET: XXX\n");
-      struct EventColor ev_c = { color, &np->attr_color };
+      struct EventColor ev_c = { cid, &np->attr_color };
       notify_send(ColorsNotify, NT_COLOR, NT_COLOR_RESET, &ev_c);
 
       regex_color_free(cl, &np);
