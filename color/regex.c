@@ -375,10 +375,10 @@ bool regex_colors_parse_uncolor(enum ColorId color, const char *pat, bool uncolo
 
   if (!pat)
   {
-      bool rc = STAILQ_FIRST(cl);
-      //QWQ event
-      regex_color_list_clear(cl);
-      return rc;
+    bool rc = STAILQ_FIRST(cl);
+    //QWQ event
+    regex_color_list_clear(cl);
+    return rc;
   }
 
   bool rc = false;
